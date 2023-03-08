@@ -24,7 +24,7 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
-    int out = open(argv[2], O_CREAT | O_WRONLY | O_TRUNC);
+    int out = open(argv[2], O_CREAT | O_WRONLY | O_TRUNC, 0666);
     if(out == -1){
         perror("Blad otwarcia pliku wyjscia");
         exit(1);
