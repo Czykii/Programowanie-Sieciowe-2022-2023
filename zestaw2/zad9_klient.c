@@ -1,8 +1,8 @@
 /*
-Napisz prostego klienta, który łączy się (użyj socket i connect) z usługą wskazaną argumentami podanymi w linii komend 
-(adres IPv4 w argv[1], numer portu TCP w argv[2]), drukuje na ekranie wizytówkę zwróconą przez serwer i kończy pracę. 
-Pamiętaj o zasadzie ograniczonego zaufania i przed przesłaniem odebranego bajtu na stdout weryfikuj, czy jest to znak drukowalny 
-lub znak kontrolny używany do zakończenia linii bądź wstawienia odstępu ('\n', '\r' oraz '\t').
+Spróbuj napisać podobną parę klient-serwer komunikującą się za pomocą protokołu UDP. 
+Pamiętaj, że UDP nie jest protokołem połączeniowym: wywołanie connect na gniazdku UDP nie powoduje wysłania w sieć żadnych pakietów. 
+Klient musi jako pierwszy wysłać jakiś datagram, a serwer dowiaduje się o istnieniu klienta dopiero gdy ten datagram do niego dotrze. 
+Sprawdź, czy możliwe jest wysyłanie pustych datagramów (tzn. o długości zero bajtów) — jeśli tak, to może niech klient właśnie taki wysyła?
 */
 
 #define _POSIX_C_SOURCE 200809L
@@ -36,12 +36,11 @@ int main(int argc, char* argv[])
 {
     int sock;
     int rc;         // "rc" to skrót słów "result code"
-    ssize_t cnt;    // wyniki zwracane przez read() i write() są tego typu
+    ssize_t cnt;    // na wyniki zwracane przez recvfrom() i sendto()
     const char* ip = argv[1];     //zmienna zawierająca adres ip
     int port = atoi(argv[2]);     //zmienna zawierająca numer portu
 
-
-    sock = socket(AF_INET, SOCK_STREAM, 0);
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock == -1) {
         perror("socket");
         return 1;
@@ -53,28 +52,28 @@ int main(int argc, char* argv[])
         .sin_port = htons(port)
     };
 
-    rc = connect(sock, (struct sockaddr *) & addr, sizeof(addr));
-    if (rc == -1) {
-        perror("connect");
-        return 1;
-    }
-
     unsigned char buf[15];
-    memcpy(buf, "ping", 4);
+    memcpy(buf, "", 0);
 
-    cnt = read(sock, buf, 15);
+    cnt = sendto(sock, NULL, 0, 0, (struct sockaddr *) & addr, sizeof(addr));
     if (cnt == -1) {
-        perror("read");
+        perror("sendto");
         return 1;
     }
+    //printf("sent %zi bytes\n", cnt);
+
+    cnt = recvfrom(sock, buf, 15, 0, NULL, NULL);
+    if (cnt == -1) {
+        perror("recvfrom");
+        return 1;
+    }
+    printf("received %zi bytes\n", cnt);
 
     if(printable_buf(buf, cnt) == false)
     {
         perror("Bajty mają znaki niedrukowalne");
         return 1;
     }
-
-    printf("%s\n",buf);
 
     rc = close(sock);
     if (rc == -1) {

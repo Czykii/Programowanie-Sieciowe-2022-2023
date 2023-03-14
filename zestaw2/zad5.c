@@ -22,8 +22,7 @@ int main(int argc, char* argv[])
     int clnt_sock;  // gniazdko połączone z bieżącym klientem
     int rc;         // "rc" to skrót słów "result code"
     ssize_t cnt;    // wyniki zwracane przez read() i write() są tego typu
-    char *p;
-    int port = strtol(argv[1], &p, 10);     //zmienna zawierająca numer portu
+    int port = atoi(argv[1]);     //zmienna zawierająca numer portu
 
     lst_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (lst_sock == -1) {
