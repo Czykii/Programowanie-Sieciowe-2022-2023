@@ -14,6 +14,7 @@ Sprawdź, czy możliwe jest wysyłanie pustych datagramów (tzn. o długości ze
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include<sys/time.h>
 
 int main(int argc, char* argv[])
 {
@@ -33,6 +34,21 @@ int main(int argc, char* argv[])
         .sin_addr = { .s_addr = htonl(INADDR_ANY) },
         .sin_port = htons(port)
     };
+
+    struct timeval timeout = {
+        timeout.tv_sec = 10,
+        timeout.tv_usec = 0
+    };
+
+    if (getsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1){
+        perror("getsockopt rcv");
+        return 1;
+    }
+
+    if(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) == -1){
+        perror("getsockopt snd");
+        return 1;
+    }
 
     rc = bind(sock, (struct sockaddr *) & addr, sizeof(addr));
     if (rc == -1) {

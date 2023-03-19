@@ -14,6 +14,7 @@ Sprawdź, czy możliwe jest wysyłanie pustych datagramów (tzn. o długości ze
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <stdbool.h>
+#include<sys/time.h>
 
 bool printable_buf(const void * buf, int len){
 
@@ -52,8 +53,23 @@ int main(int argc, char* argv[])
         .sin_port = htons(port)
     };
 
+    struct timeval timeout = {
+        timeout.tv_sec = 10,
+        timeout.tv_usec = 0
+    };
+
+    if (getsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1){
+        perror("getsockopt rcv");
+        return 1;
+    }
+
+    if(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) == -1){
+        perror("getsockopt snd");
+        return 1;
+    }
+
     unsigned char buf[15];
-    memcpy(buf, "", 0);
+    //memcpy(buf, "", 0);
 
     cnt = sendto(sock, NULL, 0, 0, (struct sockaddr *) & addr, sizeof(addr));
     if (cnt == -1) {
@@ -73,6 +89,10 @@ int main(int argc, char* argv[])
     {
         perror("Bajty mają znaki niedrukowalne");
         return 1;
+    }
+    else
+    {
+        printf("%s\n",buf);
     }
 
     rc = close(sock);
