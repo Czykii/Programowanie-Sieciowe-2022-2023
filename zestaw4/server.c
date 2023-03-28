@@ -90,7 +90,7 @@ int main(void)
             return 1;
         }
 
-        printf("received %zi bytes\n", cnt);
+        //printf("received %zi bytes\n", cnt);
         bool znak_wyst = false; // boolean informujący czy pojawił się już znak '+' lub '-'
         for (int i = 0, j = 0, ind_znak = 0; i <= cnt; i++)
         {            
@@ -119,7 +119,13 @@ int main(void)
                 }
 
                 // Sprawdzenie, czy w wiadomości od klienta nie występują 2 znaki po sobie (np. 100++15 lub 100-+15)
-                if((buf[i] == '+' && buf[i - 1] == '+') ||(buf[i] == '-' && buf[i - 1] == '-'))
+                if((buf[i] == '+' && buf[i - 1] == '+') ||(buf[i] == '-' && buf[i - 1] == '-') || (buf[i] == '+' && buf[i - 1] == '-') || (buf[i] == '-' && buf[i - 1] == '+'))
+                {
+                    error = true;
+                    break;
+                }
+
+                if(i == cnt - 1 && (buf[i] == '+' || buf[i] == '-'))
                 {
                     error = true;
                     break;
@@ -222,7 +228,7 @@ int main(void)
             int out = 0;
             if(data)
             {
-                out = sprintf(number, "%ld\n", sum);
+                out = sprintf(number, "%ld", sum);
             }
             else
             {
@@ -240,7 +246,7 @@ int main(void)
         // Odpowiedź serwera w przypadku wystąpienia błędu
         else
         {
-            cnt = sendto(sock, "ERROR\n", 6, 0,
+            cnt = sendto(sock, "ERROR", 5, 0,
                     (struct sockaddr *) & clnt_addr, clnt_addr_len);
             if (cnt == -1) {
                 perror("sendto");
