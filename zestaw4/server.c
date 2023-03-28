@@ -92,8 +92,8 @@ int main(void)
 
         printf("received %zi bytes\n", cnt);
         bool znak_wyst = false; // boolean informujący czy pojawił się już znak '+' lub '-'
-        for (int i = 0, j = 0, ind_znak = 0; i < sizeof(buf); i++)
-        {
+        for (int i = 0, j = 0, ind_znak = 0; i <= cnt; i++)
+        {            
             // Sprawdzenie czy aktualny znak w wiadomości jest spacją
             if(buf[i] == ' ')
             {
@@ -101,7 +101,7 @@ int main(void)
                 break;
             }
             // Sprawdzenie, czy aktualny znak w wiadomości jest znakiem działania lub końcem linii
-            else if(buf[i] == '+' || buf[i] == '-' || buf[i] == '\n' || (buf[i] == '\r' && buf[i + 1] == '\n'))
+            else if(buf[i] == '+' || buf[i] == '-' || buf[i] == '\n' || (buf[i] == '\r' && buf[i + 1] == '\n') || i == cnt)
             {
                 //  Sprawdzanie, czy klient nie wysłał pustej wiadomości
                 if((buf[i] == '\n' || (buf[i] == '\r' && buf[i + 1] == '\n')) && znak_wyst == false && size_of_number == 0)
@@ -119,7 +119,7 @@ int main(void)
                 }
 
                 // Sprawdzenie, czy w wiadomości od klienta nie występują 2 znaki po sobie (np. 100++15 lub 100-+15)
-                if(buf[i - 1] == '+' || buf[i - 1] == '-')
+                if((buf[i] == '+' && buf[i - 1] == '+') ||(buf[i] == '-' && buf[i - 1] == '-'))
                 {
                     error = true;
                     break;
@@ -161,6 +161,19 @@ int main(void)
                     znak_wyst = true;
                 }
 
+                // Obsługa przypadków bez znaku końca linii na końcu datagramu
+                if(i == cnt && buf[ind_znak] == '+'){
+                    sum = sum + conv_number;
+                    data = true;
+                    break;
+                }
+                
+                if(i == cnt && buf[ind_znak] == '-'){
+                    sum = sum - conv_number;
+                    data = true;
+                    break;
+                }
+
                 // Dodawanie
                 if(buf[ind_znak] == '+')
                 {
@@ -189,7 +202,7 @@ int main(void)
                 number[j] = buf[i];
                 size_of_number++;
                 j++;
-                if(j == 11)
+                if(j == 21)
                 {
                     error = true;
                     break;
