@@ -81,7 +81,7 @@ int main(void)
         int size_of_number = 0; // zmienna informująca z ilu cyfr składa się liczba
         long int sum = 0;   // zmienna będąca sumą podanego działania
         bool error = false; // boolean informujący czy wystąpił błąd
-        bool data = false;  // boolean informujący czy przeczytaliśmy cały datagram
+        bool data = false;  // boolean informujący czy datagram kończy się \n lub \r\n
 
         cnt = recvfrom(sock, buf, sizeof(buf), 0,
                 (struct sockaddr *) & clnt_addr, & clnt_addr_len);
@@ -92,7 +92,7 @@ int main(void)
 
         //printf("received %zi bytes\n", cnt);
         bool znak_wyst = false; // boolean informujący czy pojawił się już znak '+' lub '-'
-        for (int i = 0, j = 0, ind_znak = 0; i <= cnt; i++)
+        for (int i = 0, j = 0, ind_znak = 0; i <= cnt; i++) //Nadmiarowy loop dla i równego cnt jest dla obsłużenia datagramów bez \n lub \r\n na końcu
         {            
             // Sprawdzenie czy aktualny znak w wiadomości jest spacją
             if(buf[i] == ' ')
@@ -107,7 +107,6 @@ int main(void)
                 if((buf[i] == '\n' || (buf[i] == '\r' && buf[i + 1] == '\n')) && znak_wyst == false && size_of_number == 0)
                 {
                     error = true;
-                    data = true;
                     break;
                 }
 
@@ -170,13 +169,11 @@ int main(void)
                 // Obsługa przypadków bez znaku końca linii na końcu datagramu
                 if(i == cnt && buf[ind_znak] == '+'){
                     sum = sum + conv_number;
-                    data = true;
                     break;
                 }
                 
                 if(i == cnt && buf[ind_znak] == '-'){
                     sum = sum - conv_number;
-                    data = true;
                     break;
                 }
 
@@ -195,12 +192,27 @@ int main(void)
                 ind_znak = i;   // Zmienna zapamiętująca poprzednie wystąpienie znaku działania
                 j = 0; 
 
-                // Sprawdzenie, czy występuje znak końca linii
-                if(buf[i] == '\n' || (buf[i] == '\r' && buf[i + 1] == '\n'))
+                // Sprawdzenie, czy i gdzie występuje znak końca linii
+                if((buf[i] == '\r' && buf[i + 1] == '\n') && i == cnt - 2)
                 {
                     data = true;
                     break;
-                } 
+                }
+                else if((buf[i] == '\r' && buf[i + 1] == '\n') && i != cnt - 2)
+                {
+                    error = true;
+                    break;
+                }
+                else if(buf[i] == '\n' && i == cnt - 1)
+                {
+                    data = true;
+                    break;
+                }
+                else if(buf[i] == '\n' && i != cnt - 1)
+                {
+                    error = true;
+                    break;
+                }
             }
             // Sprawdzenie, czy aktualny znak w wiadomości jest cyfrą
             else if(buf[i] >= '0' && buf[i] <= '9')
@@ -228,7 +240,7 @@ int main(void)
             int out = 0;
             if(data)
             {
-                out = sprintf(number, "%ld", sum);
+                out = sprintf(number, "%ld\r\n", sum);
             }
             else
             {
