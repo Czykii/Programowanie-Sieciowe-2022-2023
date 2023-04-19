@@ -51,6 +51,10 @@ int listening_socket_tcp_ipv4(in_port_t port)
     return s;
 }
 
+
+// Pomocnicze funkcje do drukowania na ekranie komunikatów uzupełnianych
+// o znacznik czasu oraz identyfikatory procesu/wątku. Będą używane do
+// raportowania przebiegu pozostałych operacji we-wy.
 void log_printf(const char * fmt, ...)
 {
     // bufor na przyrostowo budowany komunikat, len mówi ile już znaków ma
@@ -183,7 +187,7 @@ char* operation(char* buf, ssize_t& bytes_read)
     while(1)
     {
         
-        for (int i = 0, j = 0, ind_znak = 0; i < bytes_read; i++) //Nadmiarowy loop dla i równego cnt jest dla obsłużenia datagramów bez \n lub \r\n na końcu
+        for (int i = 0, j = 0, ind_znak = 0; i < bytes_read; i++)
         {            
             // Sprawdzenie czy aktualny znak w wiadomości jest spacją
             if(buf[i] == ' ')
@@ -208,7 +212,8 @@ char* operation(char* buf, ssize_t& bytes_read)
             // Sprawdzenie, czy aktualny znak w wiadomości jest znakiem działania lub końcem linii
             else if(buf[i] == '+' || buf[i] == '-' || (buf[i] == '\r' && buf[i + 1] == '\n'))
             {
-
+                
+                //  W przypadku wystąpienia błędu pomijamy resztę zapytanie do końca linii
                 if(error && buf[i] != '\r')
                 {
                     continue;
