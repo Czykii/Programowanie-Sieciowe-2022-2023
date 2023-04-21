@@ -178,16 +178,15 @@ char* operation(char* buf, ssize_t& bytes_read)
     char number[4096];
     char resp_tmp[4096] = "";
     char answer[4096] = "";
-    int size_of_number = 0; // zmienna informująca z ilu cyfr składa się liczba
+    char mode;  // Zmienna zapamiętująca znak działania
+    int size_of_number; // zmienna informująca z ilu cyfr składa się liczba
     long int sum = 0;   // zmienna będąca sumą podanego działania
     bool error = false; // boolean informujący czy wystąpił błąd
-    bool no_end = false; // boolean informujący, że wiadomość od klienta zakończona jest niepoprawnie (brak '\r\n' na końcu)
     bool znak_wyst = false; // boolean informujący czy pojawił się już znak '+' lub '-'
 
     while(1)
-    {
-        
-        for (int i = 0, j = 0, ind_znak = 0; i < bytes_read; i++)
+    {  
+        for (int i = 0, size_of_number = 0, ind_znak = 0; i < bytes_read; i++)
         {            
             // Sprawdzenie czy aktualny znak w wiadomości jest spacją
             if(buf[i] == ' ')
@@ -200,13 +199,6 @@ char* operation(char* buf, ssize_t& bytes_read)
             if(error == true && buf[i] != '\r')
             {
                 continue;
-            }
-            
-            // Sprawdzenie, czy wiadomość została zakończona znakiem końca linii
-            if(i == bytes_read - 2 && (buf[i] != '\r' || buf[i + 1] != '\n'))
-            {
-                no_end = true;
-                break;
             }
 
             // Sprawdzenie, czy aktualny znak w wiadomości jest znakiem działania lub końcem linii
@@ -243,13 +235,13 @@ char* operation(char* buf, ssize_t& bytes_read)
                     error = true;
                 }
                 
-                number[j] = '\0';
+                number[size_of_number] = '\0';
 
                 long int conv_number = strtoul(number, NULL, 10);
 
                 // Sprawdzanie, czy liczba została poprawnie przekonwertowana   (sprawdzam czy liczba ascii jedności itd. - liczba ascii 0 jest równa modulo liczby test)
                 long int test = conv_number;
-                for (int k = j - 1; k >= 0; k--)
+                for (int k = size_of_number - 1; k >= 0; k--)
                 {
                     if(number[k] - '0' != test % 10)
                     {
@@ -283,12 +275,12 @@ char* operation(char* buf, ssize_t& bytes_read)
                 }
 
                 // Dodawanie
-                if(buf[ind_znak] == '+' && buf[i] != '\r')
+                if(mode == '+' && buf[i] != '\r')
                 {
                     sum = sum + conv_number;
                 }
                 // Odejmowanie
-                if(buf[ind_znak] == '-' && buf[i] != '\r')
+                if(mode == '-' && buf[i] != '\r')
                 {
                     sum = sum - conv_number;
                 }
@@ -298,12 +290,12 @@ char* operation(char* buf, ssize_t& bytes_read)
                 {
                     
                     // Obsługa przypadków bez znaku końca linii na końcu datagramu
-                    if(buf[ind_znak] == '+')
+                    if(mode == '+')
                     {
                         sum = sum + conv_number;
                     }
                     
-                    if(buf[ind_znak] == '-')
+                    if(mode == '-')
                     {
                         sum = sum - conv_number;
                     }
@@ -325,23 +317,30 @@ char* operation(char* buf, ssize_t& bytes_read)
                     i++;
                     znak_wyst = false;
                     error = false;
+                    mode = '0';
                 }
 
-                ind_znak = i;   // Zmienna zapamiętująca poprzednie wystąpienie znaku działania
-                j = 0; 
+                if(buf[i] == '+')
+                {
+                    mode = '+';
+                }
+                else if(buf[i] == '-')
+                {
+                    mode = '-';
+                }
+                size_of_number = 0; 
 
             }
             // Sprawdzenie, czy aktualny znak w wiadomości jest cyfrą
             else if(buf[i] >= '0' && buf[i] <= '9')
             {
-                if(j == 0 && buf[i] == '0')
+                if(size_of_number == 0 && buf[i] == '0')
                 {
                     continue;
                 }
-                number[j] = buf[i];
+                number[size_of_number] = buf[i];
                 size_of_number++;
-                j++;
-                if(j > 21)
+                if(size_of_number > 21)
                 {
                     error = true;
                     continue;
@@ -353,11 +352,6 @@ char* operation(char* buf, ssize_t& bytes_read)
                 error = true;
                 continue;
             }
-        }
-
-        if(no_end)
-        {
-            strcat(resp_tmp, "ERROR\r\n");
         }
 
         strcpy(buf, resp_tmp);
