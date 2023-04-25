@@ -1,27 +1,18 @@
-#include <errno.h>
-#include <pthread.h>
-#include <signal.h>
 #include <stdarg.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <iostream>
-
+#include <map>
 // Te dwa pliki nagłówkowe są specyficzne dla Linuksa z biblioteką glibc:
 #include <sys/epoll.h>
 #include <sys/syscall.h>
 
-// Standardowa procedura tworząca nasłuchujące gniazdko TCP.
+#define DATA_SIZE 4096
 
+std::map<long int, char*> client_message;   //  Mapa, która zbiera zapytania klientów
+
+// Standardowa procedura tworząca nasłuchujące gniazdko TCP.
 int listening_socket_tcp_ipv4(in_port_t port)
 {
     int s;
@@ -175,19 +166,18 @@ int close_verbose(int fd)
 
 char* operation(char* buf, ssize_t& bytes_read)
 {
-    char number[4096];
-    char resp_tmp[4096] = "";
-    char answer[4096] = "";
-    char mode;  // Zmienna zapamiętująca znak działania
-    int size_of_number; // zmienna informująca z ilu cyfr składa się liczba
+    char number[DATA_SIZE];
+    char resp_tmp[DATA_SIZE] = "";
+    char answer[DATA_SIZE] = "";
+    char mode = '\0';  // Zmienna zapamiętująca znak działania
     long int sum = 0;   // zmienna będąca sumą podanego działania
     bool error = false; // boolean informujący czy wystąpił błąd
     bool znak_wyst = false; // boolean informujący czy pojawił się już znak '+' lub '-'
 
     while(1)
     {  
-        for (int i = 0, size_of_number = 0, ind_znak = 0; i < bytes_read; i++)
-        {            
+        for (int i = 0, size_of_number = 0; i < bytes_read; i++)    // size_of_number - zmienna informująca z ilu cyfr składa się liczba
+        {    
             // Sprawdzenie czy aktualny znak w wiadomości jest spacją
             if(buf[i] == ' ')
             {
@@ -236,7 +226,6 @@ char* operation(char* buf, ssize_t& bytes_read)
                 }
                 
                 number[size_of_number] = '\0';
-
                 long int conv_number = strtoul(number, NULL, 10);
 
                 // Sprawdzanie, czy liczba została poprawnie przekonwertowana   (sprawdzam czy liczba ascii jedności itd. - liczba ascii 0 jest równa modulo liczby test)
@@ -305,19 +294,20 @@ char* operation(char* buf, ssize_t& bytes_read)
                         sprintf(answer, "%ld\r\n", sum);
 
                         strcat(resp_tmp, answer);
-                        sum = 0;
+
                     }
                     // Odpowiedź serwera w przypadku wystąpienia błędu
                     else
                     {
                         strcat(resp_tmp, "ERROR\r\n");
-                        sum = 0;
+
                     }
 
-                    i++;
-                    znak_wyst = false;
-                    error = false;
-                    mode = '0';
+                    
+                    strcpy(buf, resp_tmp);
+                    bytes_read = i + 2;
+                    return buf;
+
                 }
 
                 if(buf[i] == '+')
@@ -334,7 +324,7 @@ char* operation(char* buf, ssize_t& bytes_read)
             // Sprawdzenie, czy aktualny znak w wiadomości jest cyfrą
             else if(buf[i] >= '0' && buf[i] <= '9')
             {
-                if(size_of_number == 0 && buf[i] == '0')
+                if(size_of_number == 0 && (buf[i] == '0' && buf[i + 1] != '+' && buf[i + 1] != '-' && buf[i + 1] != '\r'))
                 {
                     continue;
                 }
@@ -353,32 +343,51 @@ char* operation(char* buf, ssize_t& bytes_read)
                 continue;
             }
         }
+        abort();    
+    }
 
-        strcpy(buf, resp_tmp);
-        bytes_read = strlen(resp_tmp);
-        return buf;
+}
 
-    }    
+bool check_rn(char* buf)
+{
+    for(long unsigned int i = 0; i < strlen(buf); i++)
+    {
+        if(buf[i] == '\r' && buf[i + 1] == '\n')
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 ssize_t read_and_write(int sock)
 {
-    char buf[4096];
+    char buf[DATA_SIZE];
 
     ssize_t bytes_read = read_verbose(sock, buf, sizeof(buf));
     if (bytes_read < 0) {
         return -1;
     }
 
-    char * data = operation(buf, bytes_read);
-    size_t data_len = bytes_read;
-    while (data_len > 0) {
-        ssize_t bytes_written = write_verbose(sock, data, data_len);
-        if (bytes_written < 0) {
-            return -1;
-        }
-        data = data + bytes_written;
-        data_len = data_len - bytes_written;
+    buf[bytes_read] = '\0';
+    strcat(client_message[sock], buf);
+
+    if(bytes_read > 0)
+    {
+        while(check_rn(client_message[sock]))
+        {
+            strcpy(buf, client_message[sock]);
+            bytes_read = strlen(buf); 
+            char buf_tmp[DATA_SIZE] = "";
+            char * data = operation(buf, bytes_read);
+            size_t data_len = strlen(data);
+            strncpy(buf_tmp, client_message[sock] + bytes_read, strlen(client_message[sock]) - bytes_read);
+            strcpy(client_message[sock], buf_tmp);
+            ssize_t bytes_written = write_verbose(sock, data, data_len);
+            if (bytes_written < 0) {
+                return -1;
+            } 
+        }   
     }
 
     return bytes_read;
@@ -386,6 +395,8 @@ ssize_t read_and_write(int sock)
 
 int add_fd_to_epoll(int fd, int epoll_fd)
 {
+    char* buf_client = new char[DATA_SIZE]();
+    client_message[fd] = buf_client;
     log_printf("adding descriptor %i to epoll instance %i", fd, epoll_fd);
     struct epoll_event ev;
     memset(&ev, 0, sizeof(ev));
@@ -400,6 +411,7 @@ int add_fd_to_epoll(int fd, int epoll_fd)
 
 int remove_fd_from_epoll(int fd, int epoll_fd)
 {
+    delete client_message[fd];
     log_printf("removing descriptor %i from epoll instance %i", fd, epoll_fd);
     int rv = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
     if (rv == -1) {
