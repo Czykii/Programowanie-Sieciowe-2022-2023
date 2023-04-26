@@ -411,7 +411,7 @@ int add_fd_to_epoll(int fd, int epoll_fd)
 
 int remove_fd_from_epoll(int fd, int epoll_fd)
 {
-    delete client_message[fd];
+    delete[] client_message[fd];
     log_printf("removing descriptor %i from epoll instance %i", fd, epoll_fd);
     int rv = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
     if (rv == -1) {
