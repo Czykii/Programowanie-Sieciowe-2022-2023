@@ -1,6 +1,3 @@
-# Zadanie 3
-Przejrzyj dokumentację netcata, upewnij się co do znaczenia opcji -v, -l oraz -u. Sprawdź też co robi opcja -C, czyli --crlf. W jakich sytuacjach może ona być potrzebna?
-
 ## -v
 
 Specify verbose output.

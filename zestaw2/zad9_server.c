@@ -1,10 +1,3 @@
-/*
-Spróbuj napisać podobną parę klient-serwer komunikującą się za pomocą protokołu UDP. 
-Pamiętaj, że UDP nie jest protokołem połączeniowym: wywołanie connect na gniazdku UDP nie powoduje wysłania w sieć żadnych pakietów. 
-Klient musi jako pierwszy wysłać jakiś datagram, a serwer dowiaduje się o istnieniu klienta dopiero gdy ten datagram do niego dotrze. 
-Sprawdź, czy możliwe jest wysyłanie pustych datagramów (tzn. o długości zero bajtów) — jeśli tak, to może niech klient właśnie taki wysyła?
-*/
-
 #define _POSIX_C_SOURCE 200809L
 #include <stdbool.h>
 #include <stdio.h>

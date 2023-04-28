@@ -1,36 +1,3 @@
-/*
-Napisz serwer UDP/IPv4 nasłuchujący na porcie nr 2020 i implementujący powyższy protokół.
-    "Jak wyglądają wyrażenia? Czy są może w odwrotnej notacji polskiej?
-        Wyrażenia są w notacji infiksowej, czyli codziennej. Poprawne wyrażenia to np. 2+2 lub 45+1044-512+0+28-0077.
-        Nie będziemy pozwalać na używanie plusa w roli znaku liczby, może on występować tylko w roli operatora dodawania. Co za tym idzie, +2+2, 100++15 itp. są niepoprawnymi zapytaniami.
-        Inne przykłady niepoprawnych wyrażeń: 2 + 2 (nie wolno używać spacji), -20+60 (rozważamy protokół dodawania i odejmowania liczb naturalnych, a -20 nie jest liczbą naturalną).
-
-     Odejmowanie liczb naturalnych może dać wynik nie będący liczbą naturalną. Co wtedy?
-        Można było albo zdecydować się na zwracanie błędu, albo dopuścić ujemne wyniki. Wybraliśmy tę drugą możliwość. 
-        Do specyfikacji trzeba dopisać „wyniki zwracane przez serwer są liczbami całkowitymi”.
-
-     Czy wyrażenie zawierające tylko jedną liczbę, bez żadnego operatora, jest dopuszczalne? A wyrażenie puste, czyli zapytanie długości zero bajtów?
-        Wyrażenia z jedną liczbą będziemy traktować jako poprawne. Wyrażenia puste mają powodować zwrócenie przez serwer komunikatu o błędzie.
-
-     Jak wielkie mogą być liczby? Czy jest może jakiś limit, np. nie więcej niż dziesięć cyfr?
-        Nie będziemy narzucali ograniczeń na to, co może wysyłać klient, postawimy za to pewne minimalne wymagania serwerowi.
-        Aby serwer mógł być uznany za poprawnie implementujący protokół, musi być on w stanie poprawnie obliczać wartości wyrażeń, w których wszystkie liczby, 
-        wynik końcowy i wyniki pośrednie mieszczą się w zakresie typu int16_t. Serwer może używać do obliczeń typu o większym zakresie wartości.
-        Co za tym idzie, po wysłaniu serwerowi 2+2 albo 10000+20000 na pewno dostaniemy w odpowiedzi poprawnie obliczoną sumę, ale gdy wyślemy 30000+30000 możemy dostać albo 60000, albo ERROR.
-
-     Czy jest jakiś limit na długość zapytań-datagramów wysyłanych przez klienta?
-        Nie, na poziomie naszego protokołu aplikacyjnego nie. Natomiast datagramowe protokoły transportowe, z których będzie on korzystał, będą miały jakieś swoje własne limity.
-        W szczególności UDP ma limit ciut poniżej 64 KiB."
-
-Serwer musi weryfikować odebrane dane i zwracać komunikat o błędzie jeśli są one nieprawidłowe w sensie zgodności ze specyfikacją protokołu.
-
-W kodzie używaj zmiennych roboczych któregoś ze standardowych typów całkowitoliczbowych (int, long int, int32_t, itd.). 
-Co za tym idzie, odebrany ciąg cyfr będzie mógł reprezentować liczbę zbyt dużą, aby dało się ją zapisać w zmiennej wybranego typu.
-Może też się zdarzyć, że podczas dodawania bądź odejmowania wystąpi przepełnienie (ang. integer overflow / wraparound). 
-Serwer ma obowiązek wykrywać takie sytuacje i zwracać błąd. Uwadze Państwa polecam pliki nagłówkowe limits.h oraz stdint.h,
-w których znaleźć można m.in. parę stałych INT_MIN i INT_MAX oraz parę INT32_MIN i INT32_MAX.
-*/
-
 #define _POSIX_C_SOURCE 200809L
 #include <stdbool.h>
 #include <stdio.h>
