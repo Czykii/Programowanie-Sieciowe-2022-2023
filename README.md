@@ -1,6 +1,6 @@
 # Programowanie-Sieciowe-2022-2023
 
-## Rozwiązania zadań z kursu Python w roku akademickim 2022/2023
+## Rozwiązania zadań z kursu Programowanie sieciowe w roku akademickim 2022/2023
 
 ### Odnosniki do zestawów zadań: 
 - [Zestaw 1](zestaw1/)
