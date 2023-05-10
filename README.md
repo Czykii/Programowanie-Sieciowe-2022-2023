@@ -9,5 +9,6 @@
 - [Zestaw 4](zestaw4/)
 - [Zestaw 6](zestaw6/)
 - [Zestaw 8](zestaw8/)
+- [Zestaw 9](zestaw9/)
 
 ##### Zestawy 5 i 7 zawierały tylko zadania do zastanowienia się lub poszukania informacji na dany temat
