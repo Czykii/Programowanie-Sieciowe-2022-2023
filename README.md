@@ -11,6 +11,7 @@
 - [Zestaw 8](zestaw8/)
 - [Zestaw 9](zestaw9/)
 - [Zestaw 11](zestaw11/)
+- [Zestaw 12](zestaw12/)
 
 ##### Zestawy 5, 7 i 10 zawierały tylko zadania do zastanowienia się lub poszukania informacji na dany temat
 ###### Treści zadań zaczerpnięte zostały z strony https://users.uj.edu.pl/~palacz/edu/202223-PS/index.html
